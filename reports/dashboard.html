@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AShare Forge 研究看板</title>
+<meta name="description" content="A股截面因子研究平台的本地工作台:数据层状态、任务卡、因子裁定台账与诚实披露。">
+<style>
+:root{
+  --ground:#f1f3f5; --surface:#ffffff; --surface-2:#f6f8fa; --surface-3:#eef1f4;
+  --border:#dde2e8; --border-2:#c9d1da;
+  --ink:#11181f; --ink-dim:#39444f; --muted:#6a7581; --faint:#95a0ac;
+  --accent:#1f6d90; --accent-soft:rgba(31,109,144,.10);
+  --good:#1c8a61; --good-soft:rgba(28,138,97,.11);
+  --neutral:#5b6b7c; --neutral-soft:rgba(91,107,124,.12);
+  --warn:#96701d; --warn-soft:rgba(150,112,29,.12);
+  --idle:#7d8894; --idle-soft:rgba(125,136,148,.10);
+  --shadow:0 1px 2px rgba(17,24,31,.05), 0 4px 14px rgba(17,24,31,.05);
+  --sans:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono","Menlo","Consolas","Liberation Mono",monospace;
+  --r:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0e1216; --surface:#151b21; --surface-2:#1b232b; --surface-3:#212b34;
+    --border:#28323c; --border-2:#3a4754;
+    --ink:#e5eaef; --ink-dim:#b2bdc8; --muted:#87939f; --faint:#5d6875;
+    --accent:#56a3c7; --accent-soft:rgba(86,163,199,.14);
+    --good:#43b285; --good-soft:rgba(67,178,133,.14);
+    --neutral:#8394a6; --neutral-soft:rgba(131,148,166,.14);
+    --warn:#c9a047; --warn-soft:rgba(201,160,71,.14);
+    --idle:#75808c; --idle-soft:rgba(117,128,140,.12);
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 6px 20px rgba(0,0,0,.28);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0e1216; --surface:#151b21; --surface-2:#1b232b; --surface-3:#212b34;
+  --border:#28323c; --border-2:#3a4754;
+  --ink:#e5eaef; --ink-dim:#b2bdc8; --muted:#87939f; --faint:#5d6875;
+  --accent:#56a3c7; --accent-soft:rgba(86,163,199,.14);
+  --good:#43b285; --good-soft:rgba(67,178,133,.14);
+  --neutral:#8394a6; --neutral-soft:rgba(131,148,166,.14);
+  --warn:#c9a047; --warn-soft:rgba(201,160,71,.14);
+  --idle:#75808c; --idle-soft:rgba(117,128,140,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 6px 20px rgba(0,0,0,.28);
+}
+
+*{box-sizing:border-box;}
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:14px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+.na{color:var(--faint); font-family:var(--mono); font-size:12px;}
+a{color:var(--accent);}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+.wrap{max-width:1220px; margin:0 auto; padding:20px 24px 56px;}
+
+/* ---------- header ---------- */
+header.hd{background:var(--surface); border-bottom:1px solid var(--border);}
+.hd-in{max-width:1220px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.mark{width:30px; height:30px; border-radius:8px; background:var(--accent); color:#fff; flex:none;
+  display:grid; place-items:center; font-family:var(--mono); font-weight:700; font-size:12px; letter-spacing:-.5px;}
+.hd h1{font-size:16px; margin:0; letter-spacing:-.2px; font-weight:650;}
+.hd .sub{font-size:11.5px; color:var(--muted); margin-top:1px;}
+.hd .right{margin-left:auto; display:flex; align-items:center; gap:10px;}
+.stamp{font-family:var(--mono); font-size:11px; color:var(--faint); text-align:right; line-height:1.45;}
+.tbtn{width:34px; height:34px; display:grid; place-items:center; border-radius:var(--r);
+  border:1px solid var(--border); background:var(--surface-2); color:var(--ink-dim); cursor:pointer;}
+.tbtn:hover{border-color:var(--accent); color:var(--accent);}
+
+/* ---------- pipeline ---------- */
+.pipe{display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 22px;}
+.step{flex:1 1 150px; min-width:140px; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:10px 12px; box-shadow:var(--shadow); position:relative;}
+.step .idx{font-family:var(--mono); font-size:10px; color:var(--faint);}
+.step .nm{font-size:12.5px; font-weight:600; margin-top:1px;}
+.step .st{font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:3px; overflow-wrap:anywhere;}
+.step::after{content:""; position:absolute; left:0; top:8px; bottom:8px; width:2px; border-radius:2px; background:var(--border-2);}
+.step.on::after{background:var(--good);}
+.step.run::after{background:var(--accent);}
+.step.idle::after{background:var(--idle);}
+
+/* ---------- section ---------- */
+.sec{margin:26px 0 0;}
+.sec-h{display:flex; align-items:baseline; gap:10px; margin:0 2px 10px; flex-wrap:wrap;}
+.sec-h h2{font-size:14px; margin:0; letter-spacing:-.1px;}
+.sec-h .n{font-family:var(--mono); font-size:11px; color:var(--muted);
+  border:1px solid var(--border); border-radius:20px; padding:1px 8px;}
+.sec-h .note{font-size:11.5px; color:var(--muted); margin-left:auto;}
+
+/* ---------- kpi ---------- */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:10px;}
+.kpi{background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:12px 14px; box-shadow:var(--shadow); position:relative; overflow:hidden;}
+.kpi .lab{font-size:10.5px; color:var(--muted); letter-spacing:.4px;}
+.kpi .big{font-family:var(--mono); font-size:22px; font-weight:600; margin-top:6px; letter-spacing:-.6px; overflow-wrap:anywhere;}
+.kpi .foot{font-size:11px; color:var(--faint); margin-top:3px;}
+.kpi::after{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--border-2);}
+.kpi.accent::after{background:var(--accent);} .kpi.accent .big{color:var(--accent);}
+.kpi.good::after{background:var(--good);} .kpi.good .big{color:var(--good);}
+.kpi.neutral::after{background:var(--neutral);} .kpi.neutral .big{color:var(--neutral);}
+.kpi.warn::after{background:var(--warn);} .kpi.warn .big{color:var(--warn);}
+.kpi.idle::after{background:var(--idle);} .kpi.idle .big{color:var(--idle); font-size:17px;}
+
+.bar{height:4px; border-radius:3px; background:var(--surface-3); margin-top:8px; overflow:hidden;}
+.bar i{display:block; height:100%; background:var(--accent);}
+
+/* ---------- cards ---------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px;}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:13px 15px; box-shadow:var(--shadow); min-width:0;}
+.card h3{font-size:12.5px; margin:0 0 9px; color:var(--ink); font-weight:650;
+  display:flex; align-items:center; gap:7px;}
+.card h3 .c{font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:auto;}
+.kv{display:flex; justify-content:space-between; gap:12px; padding:4px 0; font-size:12px;
+  border-bottom:1px solid var(--border);}
+.kv:last-child{border-bottom:0;}
+.kv .k{color:var(--muted); flex:none;}
+.kv .v{font-family:var(--mono); color:var(--ink-dim); text-align:right; overflow-wrap:anywhere;}
+.yrow{display:flex; align-items:center; gap:8px; font-size:11.5px; padding:2px 0;}
+.yrow .y{font-family:var(--mono); color:var(--muted); width:34px; flex:none;}
+.yrow .t{flex:1; height:8px; background:var(--surface-3); border-radius:2px; overflow:hidden; min-width:40px;}
+.yrow .t i{display:block; height:100%; background:var(--accent-soft); border-right:2px solid var(--accent);}
+.yrow .v{font-family:var(--mono); color:var(--ink-dim); width:64px; text-align:right; flex:none;}
+
+/* ---------- pills ---------- */
+.pill{font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
+.pill .d{width:6px; height:6px; border-radius:50%; background:currentColor; flex:none;}
+.pill.good{background:var(--good-soft); color:var(--good);}
+.pill.neutral{background:var(--neutral-soft); color:var(--neutral);}
+.pill.warn{background:var(--warn-soft); color:var(--warn);}
+.pill.accent{background:var(--accent-soft); color:var(--accent);}
+.pill.idle{background:var(--idle-soft); color:var(--idle);}
+
+/* ---------- task cards ---------- */
+.task{background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:13px 15px; box-shadow:var(--shadow); min-width:0;}
+.task .hd2{display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+.task .tid{font-family:var(--mono); font-size:11px; color:var(--muted);}
+.task .tnm{font-size:13.5px; font-weight:650;}
+.task .q{margin:9px 0 0; padding:0 0 0 14px; font-size:12.5px; color:var(--ink-dim);}
+.task .q li{margin:3px 0;}
+.task .meta{margin-top:9px; font-size:11px; color:var(--faint); font-family:var(--mono); overflow-wrap:anywhere;}
+details{margin-top:9px; border-top:1px solid var(--border); padding-top:8px;}
+summary{cursor:pointer; font-size:11.5px; color:var(--muted); list-style:none;}
+summary::-webkit-details-marker{display:none;}
+summary::before{content:"▸ "; color:var(--faint);}
+details[open] summary::before{content:"▾ ";}
+details .body{margin-top:8px; font-size:12px; color:var(--ink-dim); line-height:1.6;}
+details pre{margin:0; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:6px; font-family:var(--mono); font-size:11px; color:var(--ink-dim);
+  white-space:pre-wrap; overflow-wrap:anywhere; max-height:380px; overflow:auto;}
+
+/* ---------- table ---------- */
+.twrap{background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  box-shadow:var(--shadow); max-width:100%; overflow-x:auto;}
+table{border-collapse:collapse; width:100%; min-width:900px;}
+thead th{text-align:right; font-size:10.5px; font-weight:600; color:var(--muted); letter-spacing:.3px;
+  padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap;}
+thead th.l{text-align:left;}
+tbody td{padding:11px 12px; border-bottom:1px solid var(--border); text-align:right;
+  white-space:nowrap; font-size:12.5px;}
+tbody tr:last-child td{border-bottom:0;}
+tbody tr:hover{background:var(--surface-2);}
+td.l{text-align:left;}
+td .fname{font-family:var(--mono); font-size:12px; color:var(--ink);}
+td .fsig{font-family:var(--mono); font-size:10.5px; color:var(--faint); margin-top:2px;}
+.spark{width:112px; height:30px; display:block;}
+.v-pos{color:var(--good);} .v-neg{color:var(--neutral);}
+
+/* ---------- empty state ---------- */
+.empty{background:var(--surface); border:1px dashed var(--border-2); border-radius:var(--r);
+  padding:20px 18px; text-align:left;}
+.empty .t{font-size:13px; font-weight:650; color:var(--ink-dim);}
+.empty .s{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.65;}
+.empty ul{margin:8px 0 0; padding-left:18px; font-size:11.5px; color:var(--faint); font-family:var(--mono);}
+.empty li{margin:2px 0; overflow-wrap:anywhere;}
+
+/* ---------- disclosure ---------- */
+.disc{background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r); padding:14px 16px;}
+.disc ol{margin:0; padding-left:20px;}
+.disc li{font-size:12px; color:var(--ink-dim); margin:5px 0; line-height:1.6;}
+.disc .hl{color:var(--warn); font-weight:600;}
+.foot{margin-top:24px; padding-top:14px; border-top:1px solid var(--border);
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  font-size:11px; color:var(--faint); font-family:var(--mono);}
+
+@media (max-width:760px){
+  .wrap{padding:16px 16px 44px;}
+  .hd-in{padding:12px 16px;}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
+  .kpi .big{font-size:19px;}
+  .stamp{display:none;}
+  .sec-h .note{margin-left:0; flex-basis:100%;}
+}
+@media print{ .tbtn{display:none;} body{background:#fff;} }
+</style>
+</head>
+<body>
+<header class="hd"><div class="hd-in"><div class="mark">AF</div><div><h1>AShare Forge · 研究看板</h1><div class="sub">A股截面因子研究平台 · 只读本地快照 · data/ashare.db · 2238 MB</div></div><div class="right"><div class="stamp">生成 2026-09-22 01:14 本地<br>2026-09-21T17:14Z</div><button class="tbtn" id="themebtn" type="button" title="切换主题" aria-label="切换明暗主题"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8.6A5 5 0 1 1 7.4 3 4 4 0 0 0 13 8.6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button></div></div></header>
+<div class="wrap">
+<div class="pipe"><div class="step on"><div class="idx">01</div><div class="nm">合同</div><div class="st">ashare_cs_v1 v2</div></div><div class="step run"><div class="idx">02</div><div class="nm">数据层</div><div class="st">5,476/5,558 只 · 98.5%</div></div><div class="step on"><div class="idx">03</div><div class="nm">截面引擎</div><div class="st">6 模块 · 5 因子插件</div></div><div class="step on"><div class="idx">04</div><div class="nm">任务卡</div><div class="st">5 张 · open 5</div></div><div class="step on"><div class="idx">05</div><div class="nm">因子裁定</div><div class="st">当前 12 因子 · PASS 0 · 历史 19</div></div><div class="step on"><div class="idx">06</div><div class="nm">保留段</div><div class="st">2024-09-01 · 解锁记录 1 条</div></div></div>
+<section class="sec"><div class="sec-h"><h2>数据层状态</h2><span class="n">data/ashare.db</span><span class="note">口径与 sync.data_quality_report 一致;只读快照,不触发同步</span></div>
+<div class="kpis"><div class="kpi accent"><div class="lab">已同步股票</div><div class="big">5,476<span style="font-size:13px;color:var(--faint)"> / 5,558</span></div><div class="foot">股池覆盖 98.5% · 按代码顺序同步</div><div class="bar"><i style="width:98.5%"></i></div></div><div class="kpi"><div class="lab">日线行数</div><div class="big">11,688,264</div><div class="foot">均 2,134 行/只</div></div><div class="kpi"><div class="lab">库内日期范围</div><div class="big" style="font-size:15px">2015-01-05<br>2026-09-18</div><div class="foot">研究加载止于保留段 2024-09-01</div></div><div class="kpi neutral"><div class="lab">股池消失股(防幸存者偏差)</div><div class="big">337</div><div class="foot">已取证退市 337 · 差额=已知消失未取证</div></div><div class="kpi"><div class="lab">最近同步(UTC)</div><div class="big" style="font-size:14px">2026-09-21 13:46:09</div><div class="foot">未解决失败 0 只</div></div><div class="kpi neutral"><div class="lab">门槛通过 / 已裁定</div><div class="big">0 / 12</div><div class="foot">零校准为主判据 · 更早批次裁定 19 条未计入</div></div></div>
+<div style="height:10px"></div>
+<div class="grid"><div class="card"><h3>数据完整性</h3><div class="kv"><span class="k">股票池(stocks)</span><span class="v">5,558</span></div><div class="kv"><span class="k">板块分布</span><span class="v">main 3488 · chinext 1449 · star 621</span></div><div class="kv"><span class="k">缺复权因子股数</span><span class="v">82</span></div><div class="kv"><span class="k">停牌行占比</span><span class="v">2.42%</span></div><div class="kv"><span class="k">ST 行占比</span><span class="v">3.12%</span></div><div class="kv"><span class="k">股池快照</span><span class="v">12 张 · 2024-01-02→2026-09-18</span></div></div><div class="card"><h3>基准指数<span class="c">主基准 中证500</span></h3><div class="kv"><span class="k">上证综指 <span class="na">sh.000001</span></span><span class="v">5,275 行 · 2005-01-04→2026-09-18</span></div><div class="kv"><span class="k">沪深300 <span class="na">sh.000300</span></span><span class="v">5,275 行 · 2005-01-04→2026-09-18</span></div><div class="kv"><span class="k">中证1000 <span class="na">sh.000852</span></span><span class="v">5,032 行 · 2005-01-04→2026-09-18</span></div><div class="kv"><span class="k">中证500 <span class="na">sh.000905</span></span><span class="v">5,275 行 · 2005-01-04→2026-09-18</span></div><div class="kv"><span class="k">创业板指 <span class="na">sz.399006</span></span><span class="v">3,961 行 · 2010-06-01→2026-09-18</span></div></div><div class="card"><h3>每年日线行数<span class="c">库内含保留段</span></h3><div class="yrow"><span class="y">2015</span><span class="t"><i style="width:53.2%"></i></span><span class="v">665,917</span></div><div class="yrow"><span class="y">2016</span><span class="t"><i style="width:56.3%"></i></span><span class="v">704,878</span></div><div class="yrow"><span class="y">2017</span><span class="t"><i style="width:63.9%"></i></span><span class="v">799,801</span></div><div class="yrow"><span class="y">2018</span><span class="t"><i style="width:68.5%"></i></span><span class="v">857,532</span></div><div class="yrow"><span class="y">2019</span><span class="t"><i style="width:71.2%"></i></span><span class="v">890,739</span></div><div class="yrow"><span class="y">2020</span><span class="t"><i style="width:76.1%"></i></span><span class="v">952,245</span></div><div class="yrow"><span class="y">2021</span><span class="t"><i style="width:84.9%"></i></span><span class="v">1,062,633</span></div><div class="yrow"><span class="y">2022</span><span class="t"><i style="width:91.9%"></i></span><span class="v">1,149,504</span></div><div class="yrow"><span class="y">2023</span><span class="t"><i style="width:96.9%"></i></span><span class="v">1,212,196</span></div><div class="yrow"><span class="y">2024</span><span class="t"><i style="width:98.8%"></i></span><span class="v">1,236,574</span></div><div class="yrow"><span class="y">2025</span><span class="t"><i style="width:100.0%"></i></span><span class="v">1,251,474</span></div><div class="yrow"><span class="y">2026</span><span class="t"><i style="width:72.3%"></i></span><span class="v">904,771</span></div><div class="kv" style="margin-top:8px"><span class="k">保留段截止</span><span class="v">2024-09-01 起 loader 默认不返回</span></div></div><div class="card"><h3>同步日志(按任务)<span class="c">UTC</span></h3><div class="kv"><span class="k">adj <span class="na">empty 30 · ok 5536</span></span><span class="v">2026-09-21 13:46:09</span></div><div class="kv"><span class="k">daily <span class="na">empty 86 · fail 1495 · ok 5506 · skip 8</span></span><span class="v">2026-09-21 08:48:04</span></div><div class="kv"><span class="k">index <span class="na">ok 5</span></span><span class="v">2026-09-20 15:13:48</span></div><div class="kv"><span class="k">stock_basic <span class="na">ok 1</span></span><span class="v">2026-09-21 06:14:22</span></div><div class="kv"><span class="k">universe <span class="na">ok 12</span></span><span class="v">2026-09-20 15:08:32</span></div><div class="kv"><span class="k">delisted_threshold</span><span class="v">2026-07-20</span></div><div class="kv"><span class="k">universe_range</span><span class="v">2024-01-02~2026-09-18</span></div></div></div>
+</section>
+<section class="sec"><div class="sec-h"><h2>任务卡</h2><span class="n">5 张 · open 5</span><span class="note">假设在拉数据之前写死;负结果同样是交付物</span></div>
+<div class="grid"><div class="task"><div class="hd2"><span class="tid">task01_accumulation_breakout</span><span class="pill accent"><i class="d"></i>open</span><span class="na">量价形态</span></div><div class="tnm">横盘吸筹→放量突破</div><ul class="q"><li>主力在横盘期悄悄吸筹、随后放量突破箱顶,这个形态是否具有横截面选股能力?</li><li>还是说它只是&quot;追涨&quot;的换皮,在扣除 T+1 与涨停不可买之后一无所剩?</li></ul><div class="meta">tasks/task01_accumulation_breakout.yaml</div><details><summary>经济逻辑与对立假设</summary><div class="body">形态派的经典假设:低振幅+缩量的横盘意味着筹码被动换手枯竭(吸筹), 随后的放量突破代表新增资金介入,价格脱离箱体后有惯性。 可证伪的对立假设:该形态只是&quot;近期强势&quot;的代理,收益全部来自动量; 或突破当日多为涨停,T+1 下根本买不进,纸面收益无法兑现。</div></details><details><summary>假设(拉数据前写死,3 条)</summary><div class="body"><ol style="margin:0;padding-left:18px"><li>H1: 该因子的 RankIC 超越零分布 95 分位(即具有真实截面选股能力)</li><li>H2: 多头组相对中证500 的超额夏普超越零分布 95 分位</li><li>H3: 扣除&quot;突破日一字涨停不可买&quot;后,超额收益衰减不超过一半</li></ol><div class="body" style="margin-top:6px"><b>证伪条件</b>:H1 或 H2 任一不成立 → 该形态在本口径下不具可交易的截面选股能力; H3 不成立 → 纸面收益主要来自买不进的涨停股,结论为&quot;形态真但不可交易&quot;。</div></div></details><details><summary>已知死路 / 不可采信来源</summary><div class="body"><ul style="margin:0;padding-left:18px"><li>参考实现(AB-Screener,GitHub 公开项目)自述&quot;已有研究 FAIL / 证据不足&quot;, 且其股票池存在幸存者偏差——即其正面结果不可采信,须独立重验。</li><li>主力资金流数据本机不可得(东财源被拦),原方案的&quot;资金层&quot;以量能/换手代替, 这是与原版的实质差异,须在结论中披露。</li></ul></div></details></div><div class="task"><div class="hd2"><span class="tid">task02_short_reversal</span><span class="pill accent"><i class="d"></i>open</span><span class="na">量价/截面经典效应</span></div><div class="tnm">短期反转</div><ul class="q"><li>过去一个月跌得最多的股票,在扣除 T+1、一字涨跌停、停牌与往返约 0.30% 的成本之后, 是否仍具有可交易的截面选股能力?</li><li>还是说 A 股的短期反转已被机构化与量化拥挤消耗,剩下的那部分恰好落在合同已剔除的 微盘与 ST 段内——即&quot;效应为真,但不在可投域里&quot;?</li></ul><div class="meta">tasks/task02_short_reversal.yaml</div><details><summary>经济逻辑与对立假设</summary><div class="body">短期反转有两条互不排斥的来源。其一是流动性提供补偿——承接恐慌抛压的一方要求回报, 价格被抛压推过头后回归,反转收益是承接的报酬而非预测能力。其二是过度反应—— 噪声交易者对消息反应过度,随后被修正。A 股的放大器在于散户成交占比高, 且 T+1 与涨跌停制度把抛压在时间上拉长,过冲更容易发生。 可证伪的对立假设有三条。(a) 换皮假设——反转只是换手率/流动性因子的另一种写法, 控制换手后 IC 归零。(b) 可投域假设——反转强度随市值下降而上升,本合同剔除 流通市值低于 20 亿与 ST 之后,最肥的一段已经不在池内,剩余部分不足以覆盖成本。 (c) 不可兑现假设——跌幅最大的一端正是最可能一字跌停或停牌的一端,T+1 下买不进, 纸面收益无法实现;任务卡01 已在突破形态上见过同型失败,此处必须独立复核而非假定不同。</div></details><details><summary>假设(拉数据前写死,3 条)</summary><div class="body"><ol style="margin:0;padding-left:18px"><li>H1: 对齐可交易收益(t+1 开盘到 t+2 开盘)的 RankIC 均值超越逐日截面打乱零分布的 95 分位</li><li>H2: 多头组(因子前10%)相对中证500 的超额夏普超越零分布 95 分位,且超额年化收益为正</li><li>H3: 2017-01-01 之后子样本的 IC 均值不低于 2017-01-01 之前子样本 IC 均值的一半</li></ol><div class="body" style="margin-top:6px"><b>证伪条件</b>:H1 不成立 → 该因子在本可交易口径下不具截面选股能力,结论为负,存档不再扩展。 H2 不成立(含&quot;零校准通过但超额年化不为正&quot;的情形)→ 有微弱截面信息但不可交易, 与任务卡01 同型;H2 的两条判据必须并用,因为任务卡01 实测过&quot;零校准 5/5 通过却年亏 20%&quot;, 只用零校准会把亏损因子判成立,只用固定阈值又对零假设不设防。 H3 不成立 → 结论限定为&quot;历史有效、近段衰减&quot;,任何面向当下的部署主张作废, 且不得再用全样本均值作为结论;H3 成立则&quot;拥挤致衰减&quot;的流行叙事在本口径下被证伪, 这同样是一条值得交付的结果。 补充判据——若剔除&quot;建仓日一字跌停或停牌而买不进&quot;的标的后超额收益衰减超过一半, 则判为&quot;效应真但不可兑现&quot;,与 H2 不成立同等处理。</div></div></details><details><summary>已知死路 / 不可采信来源</summary><div class="body"><ul style="margin:0;padding-left:18px"><li>2017 年后衰减是公开研究的普遍报告,常见归因为机构化、量化产品同质化与策略拥挤。 因此&quot;用全样本均值宣称有效&quot;会被 2017 年之前的高收益段拉高,分段报告是必需项而非可选项。</li><li>微盘依赖——反转强度随市值下降而上升。合同已剔除流通市值低于 20 亿与 ST, 等于切掉该效应最肥的一段;若只在被剔除段内成立,结论应写成&quot;有效但不在可投域内&quot;, 而不是&quot;有效&quot;。</li><li>换手率换皮——反转与换手/流动性高度相关,不做换手控制的正结果不可采信。</li><li>停牌复牌跳价会被误读为新的反转信号。因子用 MAX_STALE_DAYS 桥接加&quot;窗口内最少成交日占比&quot; 两道闸拦截,但长停牌股复牌后的首段仍应视为可疑样本。</li><li>一字跌停不可买——跌幅最大的一端正是最可能封死跌停的一端。回测器已执行 can_buy, 但任务卡仍须单独报告&quot;因买不进而被迫放弃的目标权重占比&quot;,否则 IC 与净值会讲两个不同的故事。</li><li>信号已被压到两日时滞——引擎执行链是 factor[t] 到 t+1 开盘建仓,主口径 skip=1 再压一天, 合计两个交易日。若结论为负,必须先用 skip=0 的对照排除&quot;是时滞吃掉了信号&quot;, 再谈&quot;效应消失&quot;,否则把执行口径的代价错记成经济结论。</li></ul></div></details></div><div class="task"><div class="hd2"><span class="tid">task03_idio_volatility</span><span class="pill accent"><i class="d"></i>open</span><span class="na">风险类/截面经典效应</span></div><div class="tnm">特质波动率</div><ul class="q"><li>低波异象在本合同的可投域(剔除 ST、次新、流通市值低于 20 亿)内是否存在, 且在扣除 T+1 与成本之后仍留有可交易的多头超额?</li><li>还是说它只是市值因子换皮——低波组基本就是大市值组,所谓超额不过是 大小盘风格轮动的会计结果?</li></ul><div class="meta">tasks/task03_idio_volatility.yaml</div><details><summary>经济逻辑与对立假设</summary><div class="body">低波异象有两条经典来源。其一是杠杆约束(betting-against-beta)—— 许多资金被禁止或不愿加杠杆,只能靠超配高 beta、高波动资产去追求高收益, 从而推高其价格、压低其预期回报;能够加杠杆的一方做多低波即可收取这份补偿。 其二是彩票偏好——投资者对&quot;小概率暴涨&quot;有系统性偏好,愿意为高波动、高右偏的股票多付钱, 高波组因而被高估。A 股散户成交占比高,理论上第二条渠道更强。 可证伪的对立假设有三条。(a) 市值换皮——A 股的高波与小市值高度相关,低波组近似大市值组, 因子收益只是 2017-2021 大盘风格与 2021-2023 小盘风格轮动的结果,不是独立 alpha。 (b) beta 换皮——低波组合的 beta 小于 1,相对中证500 的&quot;超额&quot;在下跌年份天然为正、 上涨年份天然为负,这是市场暴露的会计效果,不是选股能力。 (c) 特质化不彻底——本口径只扣掉单一市场代理,缺 SMB/HML,残差中仍留有规模与风格暴露, 所谓&quot;特质&quot;波动其实仍含系统性成分。三条都必须被单独检验,不得因为因子名里有&quot;特质&quot;二字 就默认已排除。</div></details><details><summary>假设(拉数据前写死,3 条)</summary><div class="body"><ol style="margin:0;padding-left:18px"><li>H1: 对齐可交易收益(t+1 开盘到 t+2 开盘)的 RankIC 均值超越逐日截面打乱零分布的 95 分位</li><li>H2: 多头组(因子前10%)相对中证500 的超额夏普超越零分布 95 分位,且超额年化收益为正</li><li>H3: 因子与流通市值的日均截面秩相关绝对值小于 0.5,且把可投域按流通市值三等分后, 三层内的 IC 均值同号、并有至少两层超越各自的零分布 95 分位</li></ol><div class="body" style="margin-top:6px"><b>证伪条件</b>:H1 不成立 → 低波在本可交易口径下不具截面选股能力,结论为负,存档不再扩展。 H2 不成立 → 有截面信息但不可交易;此处同样两条判据并用,理由与任务卡02 相同—— 只用零校准会把亏损因子判成立,只用固定阈值又对零假设不设防。 H3 不成立 → 低波在本口径下不是独立因子,而是市值或风格的换皮, 结论降级为&quot;与市值高度重合,不单独立项&quot;,并转由组合层判断是否还有增量。 补充判据——若多头组 beta 调整后的超额年化不为正,则判为&quot;超额来自低 beta 而非选股能力&quot;, 与 H2 不成立同等处理。</div></div></details><details><summary>已知死路 / 不可采信来源</summary><div class="body"><ul style="margin:0;padding-left:18px"><li>市值换皮是本卡最大的风险,必须单独检验,不得默认已排除。A 股波动率与流通市值负相关强, 低波因子很可能只是&quot;买大市值&quot;;而市值风格在样本期内多次反转(2017-2020 大盘占优、 2021-2023 小盘占优、2024-01 微盘流动性危机),一个市值换皮的低波因子会表现出 强烈的分段不稳定,却可能在全样本均值上看起来正常。判据见 H3。</li><li>与上一条配套的取样陷阱——合同已剔除流通市值低于 20 亿,可投域的市值跨度本就被截断, 这会同时削弱真实的低波效应与市值换皮的表现。当前库内样本(按代码顺序同步, 以沪市主板老股为主)实测低波因子与流通市值的日均截面秩相关仅约 +0.04, 这个数字不能当作&quot;已排除换皮&quot;的证据——它同样可能只说明样本的市值跨度太窄。 该诊断必须在全量同步完成后重算。</li><li>beta 与 alpha 混淆——多头超额若全部来自 beta 小于 1,则在任何下跌年份都会&quot;有效&quot;, 这不是选股能力。须同时报告多头组相对中证500 的 beta 与 beta 调整后的超额。</li><li>价格冻结伪装成低波——长停牌与连续一字板会让个股收益恒为零,算出极低甚至为零的波动, 取负后排在多头组最前。因子已设两道闸(估计量为正,且个股自身收益标准差为正), 其中第二道闸是自测实测发现的必需项——excess 口径把 beta 固定为 1,冻结股的超额收益 等于市场收益的相反数,标准差恰好等于市场自身波动,只查&quot;波动大于零&quot;拦不住。 但复牌后的首段仍应视为可疑样本。</li><li>单因子残差不等于特质——免费数据下没有现成可靠的 SMB/HML 因子收益序列, 本口径的&quot;特质&quot;只是扣掉市场代理后的残差。这是数据边界而非已解决的问题,须在结论中披露。</li><li>频率口径分歧——低波异象在月频调仓的文献中最强;本引擎为日频信号、窗口 60 日, 换手更高、成本侵蚀更重。日频不成立不能推断月频也不成立,反之亦然; 结论必须带上调仓频率的限定词。</li></ul></div></details></div><div class="task"><div class="hd2"><span class="tid">task04_illiquidity</span><span class="pill accent"><i class="d"></i>open</span><span class="na">流动性</span></div><div class="tnm">Amihud非流动性</div><ul class="q"><li>单位成交额推动价格的幅度(非流动性)是否具有横截面选股能力?</li><li>还是说它只是流通市值的单调变换——非流动性溢价实为小市值溢价换皮?</li><li>在合同已剔除 ST、次新、流通市值&lt;20亿之后,剩余样本内是否还有可交易的非流动性补偿?</li></ul><div class="meta">tasks/task04_illiquidity.yaml · 因子插件 ashare_forge/factors/illiquidity.py</div><details><summary>经济逻辑与对立假设</summary><div class="body">Amihud(2002)的非流动性溢价假说:交易一只股票的冲击成本越高,持有者要求的预期收益越高, 差额是对未来变现成本的补偿。在 A 股还有一条同向的本土证据链——换手率因子长期为负, 即高换手(高流动性、高投机度)的股票后续收益偏低;低换手股对应低成交额、高 Amihud 值。 两条逻辑指向同一符号,故方向可以在拉数据前单一申报,不留事后挑符号的余地。 可证伪的对立假设:(a) 该因子只是流通市值的代理,市值中性化后信息归零; (b) 冲击成本本身就是交易成本——即便毛收益为正,按合同的单边 0.125% 成本(对流动性最差的 一端其实还偏乐观)扣完后净额为负,属因子真但不可交易; (c) 在 T+1 与涨跌停约束下,最不流动的一端恰恰是买不进、卖不掉的那一端。</div></details><details><summary>假设(拉数据前写死,4 条)</summary><div class="body"><ol style="margin:0;padding-left:18px"><li>H1: 主口径 RankIC 超越零分布 95 分位(具有真实截面选股能力)</li><li>H2: 多头组相对中证500 的超额夏普超越零分布 95 分位</li><li>H3: 市值中性化后(T2),RankIC 仍超越其自身的零分布 95 分位</li><li>H4: 把合同成本翻倍(单边 0.25%)后,多头超额年化仍为正</li></ol><div class="body" style="margin-top:6px"><b>证伪条件</b>:H1 或 H2 不成立 → 该因子在本口径下不具可交易的截面选股能力; H3 不成立 → 非流动性无独立于市值的信息,记为市值代理,结论按此写,不得只报主口径; H4 不成立 → 记为因子真但被自身的交易成本吃掉,属不可交易。 另:零假设校准通过不等于赚钱(任务卡01 实测过零校准 5/5 通过却年亏 20%), 绝对门槛与零分布判据必须并列呈现。</div></div></details><details><summary>已知死路 / 不可采信来源</summary><div class="body"><ul style="margin:0;padding-left:18px"><li>非流动性与市值高度相关,可能只是小市值换皮。实测(2019-01-02→2024-08-30,库内 611 只) ILLIQ 与流通市值的日均截面秩相关 = -0.84,共同变动约七成。因此主口径单独跑出正结果 不足以立论,必须与 build_factor_size_neutral 并列汇报:中性化后若信息归零, 结论应写成「非流动性无独立信息,原始效应由市值承担」。 中性化后残差与市值的秩相关降至 -0.08;不为 0 是因为残差只对市值秩做了线性正交, 单调非线性部分仍有残留,这一点须在结论中披露,不得宣称完全中性。 (该相关系数随样本扩大稳定:库内 413 只时 -0.85,611 只时 -0.84。)
+</li><li>非流动性因子的回测收益与冲击成本是同一件事的两面:因子值最高的一端,正是实际冲击成本 被合同固定值(单边 0.1%)低估得最多的一端。故毛收益为正而净收益为负是本因子的典型归宿, 须按平静/危机分层复核成本敏感性(成本翻倍档,见 H4)。
+</li><li>合同已剔除流通市值&lt;20亿与次新股,天然砍掉了 Amihud 效应最强的尾部; 本卡的结论只对「流通市值20亿以上、上市满120交易日、非ST」的池子成立,不得外推到全市场。
+</li><li>本库 adj_factor 表覆盖远落后于 daily 表,adj_close 对多数股票退化为原始 close; 故本因子的收益口径改用 pctChg(已含除权调整),不依赖复权因子表。 但回测器 backtest 仍用 adj_close 算持仓收益,该处的偏差不在本卡可控范围内,须一并披露。
+</li></ul></div></details></div><div class="task"><div class="hd2"><span class="tid">task05_earnings_yield</span><span class="pill accent"><i class="d"></i>open</span><span class="na">估值质量</span></div><div class="tnm">盈利收益率E/P</div><ul class="q"><li>盈利收益率(E/P = 1/peTTM)高的股票后续是否跑赢?即 A 股是否存在可交易的价值溢价?</li><li>用 B/P(1/pbMRQ)作对照:起作用的是盈利便宜还是账面便宜?</li><li>把估值字段整体滞后一个月乃至三个月后,信号是否仍在?——这是对数据前视的自检。</li></ul><div class="meta">tasks/task05_earnings_yield.yaml · 因子插件 ashare_forge/factors/earnings_yield.py</div><details><summary>经济逻辑与对立假设</summary><div class="body">价值溢价的标准解释:高 E/P 意味着单位价格买到更多当期盈利,若市场对盈利的持续性定价过低, 持有高 E/P 组合可获得均值回复的补偿;风险解释则认为高 E/P 是困境风险的定价,溢价是风险报酬。 可证伪的对立假设:(a) A 股的价值溢价在 2017-2021 的成长风格中长期为负,若样本内正结果 完全由个别片段贡献,则属区制依赖而非稳定因子; (b) E/P 的截面差异主要由行业构成决定(银行/地产天然高 E/P),行业中性化后归零; (c) 正结果来自 peTTM 的发布时滞——即因子值提前知道了尚未公告的盈利。</div></details><details><summary>假设(拉数据前写死,5 条)</summary><div class="body"><ol style="margin:0;padding-left:18px"><li>H1: 主口径(T1)RankIC 超越零分布 95 分位</li><li>H2: 多头组相对中证500 的超额夏普超越零分布 95 分位</li><li>H3: lag=60 档相对 lag=0 档(T3)的 RankIC 衰减不超过一半</li><li>H4: 仅正盈利档的 RankIC 与保留负盈利档同号,且量级不低于其一半; 若不成立,说明信号由亏损股尾巴驱动,属困境/壳价值而非估值。
+</li><li>H5: 按年度分解后正贡献不集中于单一年份(最大单年贡献占比 &lt; 50%)</li></ol><div class="body" style="margin-top:6px"><b>证伪条件</b>:H1 或 H2 不成立 → 该因子在本口径下不具可交易的截面选股能力; H3 不成立 → 效应来自披露时点(数据前视嫌疑),结论不得写成估值有效; H4 不成立 → 效应来自亏损股尾巴,应改立困境反转任务卡重新申报; H5 不成立 → 记为区制依赖,不得作为稳定因子进组合层。 绝对门槛与零分布判据必须并列呈现:任务卡01 已实测零校准 5/5 通过却年亏 20%。</div></div></details><details><summary>已知死路 / 不可采信来源</summary><div class="body"><ul style="margin:0;padding-left:18px"><li>A股估值因子在 2017-2021 的成长风格下长期失效(核心资产行情中低估值组合持续跑输)。 因此全样本平均值会被区制掩盖,必须按年度以及按合同 regimes 的平静-危机分层分别报告; 只报全样本均值的结论不予采信。
+</li><li>peTTM 来自 baostock 为当期快照而非 PIT:存在财报修订与发布时滞导致的前视风险, 本平台无法完全排除,详见 pit_risk 段。任何正结果都必须与 lag=60 档并列呈现, 若 lag=60 后信号消失,结论应写成「效应来自披露时点而非估值」。
+</li><li>E/P 的截面差异高度依赖行业构成(银行、地产、钢铁天然高 E/P)。本平台无 PIT 行业分类 (合同已声明行业为当前快照),故无法做行业中性化;这意味着正结果可能只是一次行业押注。 须在结论中明写该项未被排除,不得以「因子有效」作结。
+</li><li>E/P 与非流动性因子(task04)存在明显负相关(实测日均截面秩相关 -0.33,同上样本), 两卡若同时进组合层,须按组合层的增量准入规则复核,不得重复计入同一条信息。
+</li></ul></div></details></div></div>
+</section>
+<section class="sec"><div class="sec-h"><h2>因子裁定</h2><span class="n">当前 12 个因子 · 台账共 63 条</span><span class="note">每个因子取最近一次裁定;更早批次(含已撤回)留在台账并计入试验次数</span></div>
+<div class="twrap"><table><thead><tr><th class="l">因子 / 机制签名</th><th class="l">任务卡</th><th>泄漏测试</th><th>RankIC</th><th>ICIR</th><th>超额夏普</th><th>零校准</th><th>门槛裁定</th><th>试验次数</th><th class="l">净值</th></tr></thead><tbody><tr><td class="l"><div class="fname">short_reversal_hold20</div><div class="fsig">c2b9652b30771cce · 2026-09-21</div></td><td class="l"><span class="na">task02_short_reversal</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0177</span></td><td><span class="num v-pos">+0.127</span></td><td><span class="num v-pos">+0.17</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">short_reversal_hold5</div><div class="fsig">c2b9652b30771cce · 2026-09-21</div></td><td class="l"><span class="na">task02_short_reversal</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0254</span></td><td><span class="num v-pos">+0.169</span></td><td><span class="num v-neg">-0.16</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">short_reversal_skip0</div><div class="fsig">eba97685042400ca · 2026-09-21</div></td><td class="l"><span class="na">task02_short_reversal</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0342</span></td><td><span class="num v-pos">+0.220</span></td><td><span class="num v-neg">-0.68</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">short_reversal</div><div class="fsig">eba97685042400ca · 2026-09-21</div></td><td class="l"><span class="na">task02_short_reversal</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0306</span></td><td><span class="num v-pos">+0.200</span></td><td><span class="num v-neg">-0.66</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">illiquidity_amihud_size_neutral</div><div class="fsig">d5f21a01bdf63369 · 2026-09-21</div></td><td class="l"><span class="na">task04_illiquidity</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0183</span></td><td><span class="num v-pos">+0.176</span></td><td><span class="num v-neg">-0.13</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">illiquidity_amihud</div><div class="fsig">f458c803084896ce · 2026-09-21</div></td><td class="l"><span class="na">task04_illiquidity</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0161</span></td><td><span class="num v-pos">+0.126</span></td><td><span class="num v-pos">+0.74</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">low_turnover_control</div><div class="fsig">7803a542575d30df · 2026-09-21</div></td><td class="l"><span class="na">task03_idio_volatility</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0286</span></td><td><span class="num v-pos">+0.160</span></td><td><span class="num v-pos">+0.58</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">idio_volatility_total</div><div class="fsig">aae71fb5d1b22e93 · 2026-09-21</div></td><td class="l"><span class="na">task03_idio_volatility</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0359</span></td><td><span class="num v-pos">+0.183</span></td><td><span class="num v-pos">+0.23</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">idio_volatility</div><div class="fsig">a92c3e80e8f62922 · 2026-09-21</div></td><td class="l"><span class="na">task03_idio_volatility</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0422</span></td><td><span class="num v-pos">+0.261</span></td><td><span class="num v-pos">+0.78</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">earnings_yield_bp</div><div class="fsig">f6b98d332dabf806 · 2026-09-21</div></td><td class="l"><span class="na">task05_earnings_yield</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0186</span></td><td><span class="num v-pos">+0.122</span></td><td><span class="num v-pos">+0.31</span></td><td><span class="num">1</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">earnings_yield_ep</div><div class="fsig">192f78068d80a2c6 · 2026-09-21</div></td><td class="l"><span class="na">task05_earnings_yield</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0152</span></td><td><span class="num v-pos">+0.123</span></td><td><span class="num v-pos">+0.31</span></td><td><span class="num">0</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr><tr><td class="l"><div class="fname">accumulation_breakout</div><div class="fsig">72ef5bf6a33bc4e0 · 2026-09-21</div></td><td class="l"><span class="na">task01_accumulation_breakout</span></td><td><span class="na">未测</span></td><td><span class="num v-pos">+0.0259</span></td><td><span class="num v-pos">+0.134</span></td><td><span class="num v-neg">-4.28</span></td><td><span class="num">0</span></td><td><span class="pill neutral"><i class="d"></i>FAIL</span></td><td><span class="num">未运行</span></td><td class="l"><span class="na" title="台账未保存净值序列">未运行</span></td></tr></tbody></table></div><div class="foot" style="margin-top:8px;border:0;padding:0"><span>台账来源:data/ashare.db::forge_trials(63)</span><span>RankIC 对齐可交易收益(t+1→t+2 开盘);超额基准 = 中证500</span></div>
+</section>
+<section class="sec"><div class="sec-h"><h2>诚实披露</h2><span class="note">限制条目取自 docs/PHASE1-DATA-LAYER.md 与合同 disclosure</span></div>
+<div class="disc"><ol><li><span class="hl">样本覆盖率 98.52%</span>(已同步 5,476 只 / 股池 5,558 只)。覆盖率接近满格之前,任何指标只用于机械验证,不足以支撑研究结论。</li><li><span class="hl">已同步子集不是随机样本</span>:全量同步按股票代码顺序推进,当前已同步的部分集中在代码靠前的区段,存在系统性偏倚;以该子集算出的 IC 与超额收益不可外推到全市场。</li><li><span class="hl">保留段锁定于 2024-09-01</span>:loader 默认不返回该日及以后的数据,解锁需显式 unlock_holdout=True 并写 meta 台账;当前解锁记录 1 条。</li><li><span class="hl">本页只读</span>:数据库以只读模式打开,不建表、不写 meta、不触发同步;页面无外链、无 CDN、无网络请求,仅供本地查看。</li><li>baostock 不覆盖北交所:快照前缀只有 sz/sh;合同中 bse 涨跌停 30% 与 is_stock_code 接受 bj.4/8 在本数据源下永远无数据。</li><li>行业分类非 PIT:只有当前快照,历史行业归属不可回溯。</li><li>中证1000 指数含发布前回算段(库内起于 2005,指数 2014 才发布),用于早期分层需披露。</li><li>股池快照为季度:两次快照之间上市又退市的股票会遗漏(极少)。</li><li>mark_delisted 依赖日线:未同步日线的股票不会被标记(不会误标,但也不会发现);n_vanished_from_universe 与 n_delisted 的差额即&quot;已知消失但尚未取证&quot;。</li><li>增量同步不回填:若先用晚起点同步过,再改早起点不会补历史(复权因子已用 full_refresh 规避,日线需手工清表重来)。</li><li>listing_age 依赖库内历史:若面板起点接近库内最早日期,前 120 个交易日会因&quot;看起来像次新&quot;而整体出池——实测 30 只在 2024 起点下 in_universe 仅 26.3%,正是此故。全量同步 10 年后不再有此问题。</li><li>研究辅助,非投资建议;只用公开免费数据;不含任何公司数据;可公开</li><li>负结果照实记录;工程通过不等于策略有效</li></ol><details><summary>保留段解锁台账原文(meta.holdout_unlocked_log)</summary><div class="body"><pre>{&quot;end&quot;: &quot;2026-09-18&quot;, &quot;func&quot;: &quot;load_panel&quot;, &quot;start&quot;: &quot;2024-01-01&quot;, &quot;ts_utc&quot;: &quot;2026-09-20T15:14:48+00:00&quot;}</pre></div></details></div>
+</section>
+<div class="foot"><span>AShare Forge · 本地研究看板 · 研究辅助,非投资建议</span><span>只用公开免费数据 · 不含任何非公开数据 · 生成于 2026-09-21T17:14:41Z</span></div>
+</div>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themebtn');
+  var KEY='ashare-forge-dash-theme';
+  function get(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+  function set(v){ try{ v? localStorage.setItem(KEY,v) : localStorage.removeItem(KEY); }catch(e){} }
+  function apply(v){ if(v){ root.setAttribute('data-theme',v); } else { root.removeAttribute('data-theme'); }
+    if(btn){ btn.title='主题:'+(v||'跟随系统'); } }
+  apply(get());
+  if(btn){ btn.addEventListener('click',function(){
+    var cur=get(), next = cur==='light' ? 'dark' : (cur==='dark' ? null : 'light');
+    set(next); apply(next);
+  }); }
+})();
+</script>
+</body>
+</html>

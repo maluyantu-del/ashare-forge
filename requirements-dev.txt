@@ -1,0 +1,3 @@
+# 开发与测试依赖(版本与开发环境 .venv 实测一致)
+-r requirements.txt
+pytest==9.1.1

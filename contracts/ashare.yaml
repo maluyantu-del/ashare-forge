@@ -1,0 +1,100 @@
+# AShare Forge 研究合同 v1 — A股截面因子研究的数据边界与交易规则
+# 原则:规则写进合同由代码执行,而不是靠"注意事项"提醒(继承 Forge)。
+contract_id: ashare_cs_v1
+version: 2   # v2(2026-09-21):修正四处交易规则事实错误,见下方各段 v2 注释
+market: "A股(沪/深/北)"
+
+data_sources:
+  primary: "baostock(免token): 日线含估值/ST/停牌字段; 退市股数据保留; query_all_stock(day)按日期股池; 复权因子; 证监会行业分类; 指数日线"
+  secondary: "akshare 新浪源: 指数/股指期货主连/个股前复权兜底"
+  csindex: "中证指数官网(经 akshare stock_zh_index_hist_csindex): 中证500全收益指数 H00905 日线,仅收盘价(开盘/最高/最低为空); 入库代码 csi.H00905,按 sh.000001 交易日历剔除休市日行; 仅用于披露口径的分红补偿,见 benchmarks"
+  unavailable: "东方财富数据源在开发环境不可达(主力资金流/转债比价/东财日线不可用); Tushare未接(若用,token由用户自置于.env,本系统不读不存)"
+  sync_reality: "baostock逐股串行,10年日线一只1~15秒; 全市场首次同步约3~7小时,须断点续传+后台运行"
+
+columns:
+  price_raw: [open, high, low, close, preclose]      # 不复权原始价(涨跌停/停牌判定用)
+  volume: [volume, amount, turn]                       # turn=换手率(百分数,0.44=0.44%)
+  status: [tradestatus, isST, pctChg]                  # tradestatus 1正常 0停牌
+  valuation: [peTTM, pbMRQ, psTTM, pcfNcfTTM]
+  adjust: [foreAdjustFactor, backAdjustFactor, adjustFactor]   # 单独表,后复权用于收益计算
+  derived:
+    adj_close: "close * backAdjustFactor(按日期前向填充)"
+    float_shares: "volume / (turn/100)  当 turn>0"
+    float_mcap: "close * float_shares  (元)"
+  reserved_intraday: "baostock 5分钟线仅近期可用(2019年无数据);接口预留,本期不建"
+
+tradability_rules:            # 回测器必须执行
+  settlement: "T+1: t日收盘信号,最早t+1开盘成交; t+1买入的当日不可卖"
+  limit_pct:
+    main_board: 0.10          # sh.60x / sz.00x
+    chinext: 0.20             # sz.30x 创业板(注册制改革 2020-08-24 起;含 ST)
+    chinext_pre_reform: 0.10  # v2 修正:2020-08-24 之前创业板为 10%,原 v1 全样本按 20% 判定致改革前涨跌停全漏
+    chinext_reform_date: "2020-08-24"
+    star: 0.20                # sh.68x 科创板
+    bse: 0.30                 # bj.4x/8x 北交所
+    st_main_board: 0.05
+  limit_rule: "v2: 涨停价=round_half_up(preclose*(1+limit), 2)(交易所按分取整),open>=涨停价-0.005 视为开盘封涨停不可买;跌停价同理取整,open<=跌停价+0.005 不可卖;触及但未封板按可成交处理(粗口径,已披露)。v1 用未取整的 preclose*(1+limit)-1e-6,取整向下时漏判(实测 2019 年主板一字涨停漏判约 41%),偏乐观"
+  suspension: "tradestatus==0 不可交易"
+  exclusions:
+    st: "isST==1 剔除"
+    new_listing_days: 120     # 上市不足120个交易日剔除(次新)
+    min_float_mcap_yuan: 2000000000   # 流通市值<20亿剔除(微盘)
+  delisting: "v2 新增:持仓股退市(stocks.out_date)时仍未能卖出(如长期停牌后直接退市),于退市日按最后可得价格清算并计 delisting_haircut 比例损失;v1 将其权重永久冻结在最后价格上(等价于零损失,最乐观)"
+  delisting_haircut: 1.0      # 事前写定的保守上界(全损);0/0.5 的敏感性由诊断脚本另行披露,不据此挑选
+  costs:
+    stamp_tax_sell: 0.0005    # 现行费率(2023-08-28 起);回测按下方 schedule 逐日取值
+    stamp_tax_sell_schedule:  # v2 修正:v1 全样本按 0.05%,而 2023-08-27 及以前为 0.1%(样本 89.5% 的交易日)
+      - {from: "2008-09-19", rate: 0.0010}
+      - {from: "2023-08-28", rate: 0.0005}
+    commission_each_side: 0.00025
+    impact_each_side: 0.0010
+    note: "单边约0.125%,往返约0.30%;最低5元佣金忽略"
+
+universe:
+  discovery: "季度快照 query_all_stock(day) 取并集 → 含已退市股;只保留股票代码(sh.60/68, sz.00/30, bj.4/8),排除指数(sh.000/sz.399)与基金"
+  pit_daily: "某日可交易性来自该日K行(tradestatus/isST);退市后无K行=不在池"
+  limitations:
+    - "两次快照之间上市又退市的股票会遗漏(极少),已披露"
+    - "行业分类为当前快照,非PIT"
+    - "指数成分(中证500等)接口不稳定,成分池为可选项"
+
+benchmarks:
+  - {code: "sh.000300", name: "沪深300"}
+  - code: "sh.000905"
+    name: "中证500"
+    primary: true            # 主基准(价格指数,不含分红);门槛与零校准一律以此为准
+    total_return:            # 仅作披露口径:不替换主基准,不进门槛,不参与零校准
+      code: "csi.H00905"
+      name: "中证500全收益"
+      source: "中证指数官网 H00905(经 akshare)"
+      role: "disclosure_only"
+      method: "第 t 行 = 价格指数 t 开盘→t+1 开盘收益 + 分红补偿;补偿 = (H00905 收→收) − (sh.000905 收→收),取 t→t+1 一步,即 t+1 为除息日时补在第 t 行;产出 excess_ann_tr / excess_sharpe_tr"
+      note: "H00905 只有收盘价,不得直接作为 bench_code(无开盘价时基准会退回收盘→收盘旧口径)"
+  - {code: "sh.000852", name: "中证1000"}
+  - {code: "sh.000001", name: "上证综指"}
+  - {code: "sz.399006", name: "创业板指"}
+
+holdout:
+  cutoff: "2024-09-01"
+  rule: "保留段下沉数据层: loader 默认不返回 cutoff 及之后的数据; 只有显式 unlock_holdout=True 才返回,且必须写台账(meta.holdout_unlocked_log)"
+
+regimes:
+  crisis_windows:            # A股自己的危机期(公开事件粗标),分层门槛用
+    - ["2015-06-15", "2015-09-30"]   # 股灾
+    - ["2018-01-29", "2018-12-31"]   # 单边熊
+    - ["2020-01-23", "2020-03-31"]   # 疫情冲击
+    - ["2024-01-15", "2024-02-08"]   # 微盘流动性危机
+
+gates_draft:                 # 截面因子准入草案(第二期细化);多头超额为主,多空为辅
+  primary_metric: "多头组(因子前10%)相对中证500的超额收益"
+  rank_ic_min: 0.02
+  icir_min: 0.30
+  long_excess_sharpe_min: 0.80
+  decile_monotonic_spearman_min: 0.60
+  psr_min: 0.90
+  use_dsr: true
+  secondary: "多空(前10%-后10%)夏普仅作参考,不作硬门(A股做空受限)"
+
+disclosure:
+  - "研究辅助,非投资建议;只用公开免费数据;不含任何公司数据;可公开"
+  - "负结果照实记录;工程通过不等于策略有效"

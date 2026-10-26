@@ -1,0 +1,65 @@
+# 任务卡 06 · 便宜又不乱跳(价值 × 低波 合成)
+task_id: task06_value_lowvol
+name: 价值低波合成
+category: 合成
+status: closed_fail
+factor_module: ashare_forge/factors/value_lowvol.py
+proposed: "2026-10-19"
+
+core_question:
+  - 把 E/P(task05)与低特质波动(task03)等权秩合成,平静期超额夏普是否高于两者均值(约 0.5)并越过 0.8 门槛?
+  - 增量来自哪一侧?价值偏置 0.7 的对照档与等权档谁更好?
+
+economic_rationale: >
+  价值溢价与低波异象的来源不同:前者是对盈利持续性的错误定价或困境风险补偿,后者是杠杆约束与
+  彩票偏好导致高波动股被高估。两者在 BATCH02 诊断里截面秩相关很低,若信息正交,等权合成在
+  同等换手下应得到更高的超额夏普。对立假设:(a) 二者的超额都来自同一条市值暴露,合成后不升反降;
+  (b) 合成后多头组集中在银行/公用事业等高 E/P 低波行业,结果只是一次行业押注(本平台无 PIT 行业,无法中性化,须披露)。
+
+direction_declaration:
+  sign: +1
+  meaning: 因子值 = 0.5×秩(E/P) + 0.5×秩(低波);组合做多合成分最高的前 10%
+  basis: 两张母卡的方向声明(task03 +1 低波、task05 +1 价值)
+  if_sign_flips: 若实测为负,记为负结果,不得改权重或改方向重跑
+
+allowed_data: [peTTM, adj_close, tradestatus, bench_close]
+inherits: {task05: "E/P 主口径(lag=20,保留负盈利)", task03: "特质波动主口径(capm,window=60)"}
+
+n_trials_if_all_run: 2
+trials_declared:            # 平台按这里的整数求和计入 DSR 的试验数，只能放整数
+  preregistered: 2
+  post_hoc: 0
+trials_list:
+  - {id: T1, builder: build_factor, note: 等权 0.5/0.5(主口径)}
+  - {id: T2, builder: build_factor_value_tilt, note: 价值偏置 0.7/0.3(对照)}
+fixed_not_tuned: [E/P 滞后 20 日, 特质波动窗口 60, capm 口径, 前 10% 等权, 不缩尾]
+
+known_dead_ends:
+  - task05 E/P 单独:平静期超额夏普 0.28、DSR 0.12,FAIL;task03 低波单独:0.71、DSR 0.49,FAIL(BATCH02b)。
+  - 非流动性因子市值中性化后归零(BATCH02b),提示小市值暴露是本库多个"异象"的共同来源;本卡须看市值中性化诊断。
+  - 无 PIT 行业分类,行业押注无法排除,结论中必须明写。
+
+hypotheses:
+  H1: 等权档平静期超额夏普 ≥ 0.8 且 PSR ≥ 0.9(合同门槛)
+  H2: 等权档 RankIC 与超额夏普超越零分布 95 分位
+  H3: 等权档平静期超额夏普高于 max(0.28, 0.71)=0.71,即合成有增量,而不只是被低波一侧带着走
+  H4: 危机期超额夏普 ≥ 0
+  H5: 十分组市值中性化后平静期超额夏普仍 ≥ 0.5
+
+falsification: >
+  H1/H2 不成立 → FAIL,记台账;H3 不成立 → "合成无增量,等同低波",不得作为新因子;
+  H5 不成立 → 超额来自市值暴露,记为换皮。门槛数值沿用合同,不得事后调整。
+
+next_steps:
+  - 若 FAIL:关闭本方向;下一个新信息源应是基本面质量(ROE/现金流)的 PIT 表,而不是继续组合价格类因子。
+  - 若 PASS:进组合层增量准入,与 task03 比对信息重叠。
+
+findings:                        # 2026-10-19 01:28 裁定（n_null=50，前 10%，T+1 开盘成交，保留段未解锁）
+  value_lowvol: {verdict: FAIL, ic_mean: 0.0344, icir: 0.2148, excess_sharpe_all: 0.6373, calm_excess_sharpe: 0.4592, psr: 0.9061, dsr: 0.2083, crisis_excess_sharpe: 1.4390, null_passed: "8/8", n_trials: 34, max_drawdown: -0.3868, ann_cost: 0.0236}
+  value_lowvol_tilt70: {verdict: FAIL, ic_mean: 0.0267, icir: 0.1824, excess_sharpe_all: 0.5707, calm_excess_sharpe: 0.3949, psr: 0.8713, dsr: 0.1567, crisis_excess_sharpe: 1.3566, null_passed: "8/8", n_trials: 35}
+  hypotheses: {H1: false, H2: true, H3: false, H4: true, H5: 未做（市值中性化诊断未跑）}
+  conclusion: >
+    两档均过零假设全部 8 项、危机期超额为正，但平静期超额夏普 0.46 / 0.39 低于 0.8 门槛，DSR 0.21 / 0.16 远低于 0.95。
+    H3 不成立：等权合成 0.46 低于低波单独的 0.71，价值偏置 0.7 更低至 0.39——加入 E/P 是在稀释低波，不是互补；
+    两者"信息正交"的前提错了（或价值一侧的信息在本口径下接近噪声）。方向关闭：价格类因子的简单秩合成到此为止。
+  lesson: 合成前先看两母因子在平静期的超额相关；一强一弱等权合成的期望就是被弱的拖下来，不是"1+1>2"。

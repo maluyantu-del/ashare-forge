@@ -1,0 +1,49 @@
+field	reference	bin_td	count	share
+peTTM	首次披露日	≤−21	3	0.0149
+peTTM	首次披露日	−20~−6	1	0.005
+peTTM	首次披露日	−5~−2	0	0.0
+peTTM	首次披露日	−1	0	0.0
+peTTM	首次披露日	0	192	0.9552
+peTTM	首次披露日	+1	4	0.0199
+peTTM	首次披露日	+2	0	0.0
+peTTM	首次披露日	+3~+5	0	0.0
+peTTM	首次披露日	+6~+10	1	0.005
+peTTM	首次披露日	+11~+20	0	0.0
+peTTM	首次披露日	≥+21	0	0.0
+peTTM	首次披露日	未见跳变	2	
+peTTM	正式报告 pubDate	≤−21	14	0.0697
+peTTM	正式报告 pubDate	−20~−6	9	0.0448
+peTTM	正式报告 pubDate	−5~−2	0	0.0
+peTTM	正式报告 pubDate	−1	0	0.0
+peTTM	正式报告 pubDate	0	177	0.8806
+peTTM	正式报告 pubDate	+1	0	0.0
+peTTM	正式报告 pubDate	+2	0	0.0
+peTTM	正式报告 pubDate	+3~+5	0	0.0
+peTTM	正式报告 pubDate	+6~+10	1	0.005
+peTTM	正式报告 pubDate	+11~+20	0	0.0
+peTTM	正式报告 pubDate	≥+21	0	0.0
+peTTM	正式报告 pubDate	未见跳变		
+pbMRQ	首次披露日	≤−21	1	0.0051
+pbMRQ	首次披露日	−20~−6	0	0.0
+pbMRQ	首次披露日	−5~−2	0	0.0
+pbMRQ	首次披露日	−1	0	0.0
+pbMRQ	首次披露日	0	177	0.9031
+pbMRQ	首次披露日	+1	0	0.0
+pbMRQ	首次披露日	+2	0	0.0
+pbMRQ	首次披露日	+3~+5	0	0.0
+pbMRQ	首次披露日	+6~+10	1	0.0051
+pbMRQ	首次披露日	+11~+20	7	0.0357
+pbMRQ	首次披露日	≥+21	10	0.051
+pbMRQ	首次披露日	未见跳变	7	
+pbMRQ	正式报告 pubDate	≤−21	1	0.0051
+pbMRQ	正式报告 pubDate	−20~−6	0	0.0
+pbMRQ	正式报告 pubDate	−5~−2	0	0.0
+pbMRQ	正式报告 pubDate	−1	0	0.0
+pbMRQ	正式报告 pubDate	0	195	0.9949
+pbMRQ	正式报告 pubDate	+1	0	0.0
+pbMRQ	正式报告 pubDate	+2	0	0.0
+pbMRQ	正式报告 pubDate	+3~+5	0	0.0
+pbMRQ	正式报告 pubDate	+6~+10	0	0.0
+pbMRQ	正式报告 pubDate	+11~+20	0	0.0
+pbMRQ	正式报告 pubDate	≥+21	0	0.0
+pbMRQ	正式报告 pubDate	未见跳变		
